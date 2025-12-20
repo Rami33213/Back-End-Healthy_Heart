@@ -12,66 +12,64 @@ use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// ═══════════════════════════════════════════════════════
+// 🔓 PUBLIC ROUTES - ما تحتاج Token
+// ═══════════════════════════════════════════════════════
+Route::post('/register', [UserController::class, 'register']);
+Route::post('/login', [UserController::class, 'login']);
 
-Route::get('/user', function (Request $request) {
-  return $request->user();
-})->middleware('auth:sanctum');
-Route::post('register', [UserController::class, 'register']);
-Route::post('login', [UserController::class, 'login']);
-Route::post('logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
+// ═══════════════════════════════════════════════════════
+// 🔒 PROTECTED ROUTES - تحتاج Token
+// ═══════════════════════════════════════════════════════
+Route::middleware('auth:sanctum')->group(function () {
+    
+    // ─── User & Auth ───
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::post('/logout', [UserController::class, 'logout']);
 
+    // ─── Profile ───
+    Route::get('/profile', [ProfileController::class, 'index']);
+    Route::post('/profile', [ProfileController::class, 'storeOrUpdate']);
 
-Route::post('/profile', [ProfileController::class, 'storeOrUpdate']); //Update Profile Info
-Route::get('/profile', [ProfileController::class, 'index']); //Get Profile Info
+    // ─── Heart Rate Records ───
+    Route::prefix('HeartRateRecord')->group(function () {
+        Route::get('/', [HeartRateRecordController::class, 'index']);         // All records
+        Route::post('/', [HeartRateRecordController::class, 'store']);        // Create new
+        Route::get('/latest', [HeartRateRecordController::class, 'show']);    // Latest only
+        Route::delete('/{id}', [HeartRateRecordController::class, 'destroy']); // Delete
+    });
 
+    // ─── ECG Records ───
+    Route::prefix('ECGRecord')->group(function () {
+        Route::get('/', [ECGRecordController::class, 'index']);          // All records
+        Route::post('/', [ECGRecordController::class, 'store']);         // Create new
+        Route::get('/latest', [ECGRecordController::class, 'show']);     // Latest only
+    });
 
-// ECGRecord
-Route::post('/ECGRecord', [ECGRecordController::class, 'store']);
+    // ─── Medical Tests ───
+    Route::prefix('MedicalTest')->group(function () {
+        Route::post('/', [MedicalTestController::class, 'store']);
+        Route::get('/latest', [MedicalTestController::class, 'show']);
+    });
 
-// كل السجل (History)
-Route::get('/ECGRecord', [ECGRecordController::class, 'index']);
+    // ─── Expert Consultation ───
+    Route::prefix('ExpertConsultation')->group(function () {
+        Route::get('/', [ExpertConsultationController::class, 'index']);      // All records
+        Route::post('/', [ExpertConsultationController::class, 'store']);     // Create new
+        Route::get('/latest', [ExpertConsultationController::class, 'show']); // Latest only
+    });
 
-// آخر قياس فقط
-Route::get('/ECGRecord/latest', [ECGRecordController::class, 'show']);
+    // ─── Diagnosis ───
+    Route::get('/Diagnosis', [DiagnosisController::class, 'show']);
+    Route::post('/Diagnosis', [DiagnosisController::class, 'store']);
 
+    // ─── Reports ───
+    Route::get('/Report', [ReportController::class, 'show']);
+    Route::post('/Report', [ReportController::class, 'store']);
 
-
-Route::post('/HeartRateRecord', [HeartRateRecordController::class, 'store']);
-Route::get('/HeartRateRecord', [HeartRateRecordController::class, 'show']);
-
-
-Route::post('/Diagnosis', [DiagnosisController::class, 'store']);
-Route::get('/Diagnosis', [DiagnosisController::class, 'show']);
-
-
-// الاستشارة الخبيرة
-Route::post('/ExpertConsultation', [ExpertConsultationController::class, 'store']);
-Route::get('/ExpertConsultation', [ExpertConsultationController::class, 'index']);   // كل السجل
-Route::get('/ExpertConsultation/latest', [ExpertConsultationController::class, 'show']); // آخر واحدة فقط 
-
-
-Route::get('/HeartRateRecord', [HeartRateRecordController::class, 'index']);
-
-// إضافة قياس جديد (camera or upload)
-Route::post('/HeartRateRecord', [HeartRateRecordController::class, 'store']);
-
-// آخر قياس
-Route::get('/HeartRateRecord/latest', [HeartRateRecordController::class, 'show']);
-
-Route::post('/MedicalTest', [MedicalTestController::class, 'store']);
-    Route::get('/MedicalTest/latest', [MedicalTestController::class, 'show']);
-
-// حذف قياس
-Route::delete('/HeartRateRecord/{id}', [HeartRateRecordController::class, 'destroy']);
-
-
-
-Route::post('/Report', [ReportController::class, 'store']);
-Route::get('/Report', [ReportController::class, 'show']);
-
-
-Route::get('/settings', [SettingsController::class, 'show']);
-Route::post('/settings', [SettingsController::class, 'store']);
-
-
-
+    // ─── Settings ───
+    Route::get('/settings', [SettingsController::class, 'show']);
+    Route::post('/settings', [SettingsController::class, 'store']);
+});
